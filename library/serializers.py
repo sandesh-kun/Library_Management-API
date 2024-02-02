@@ -31,7 +31,7 @@ class BorrowedBookSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = BorrowedBooks
-        fields = ['BookID', 'BorrowDate', 'ReturnDate']  # Serialize specific fields
+        fields = ['UserID','BookID', 'BorrowDate', 'ReturnDate']  # Serialize specific fields
 
 class UserBorrowedBooksSerializer(serializers.ModelSerializer):
     """

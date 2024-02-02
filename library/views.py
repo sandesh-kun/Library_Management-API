@@ -1,14 +1,34 @@
 import logging
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import ListAPIView
 from django.db import DatabaseError
+from rest_framework.decorators import api_view
+from django.contrib.auth.models import User as AuthUser
+from rest_framework.authtoken.models import Token
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import User, Book, BookDetails, BorrowedBooks
 from .serializers import UserSerializer, BookSerializer, BookDetailsSerializer, BorrowedBookSerializer, UserBorrowedBooksSerializer
+from django.http import JsonResponse
 
 # Set up logging for error tracking and debugging
 logger = logging.getLogger(__name__)
+
+@api_view(['POST'])
+def create_auth(request):
+    try:
+        username = request.data.get('username')
+        password = request.data.get('password')
+        if not username or not password:
+            return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = AuthUser.objects.create_user(username=username, password=password)
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class UserViewSet(viewsets.ModelViewSet):
     # This line sets the queryset for this viewset to all User instances
@@ -51,7 +71,8 @@ class BookViewSet(viewsets.ModelViewSet):
     # Specifies the serializer class for books
     serializer_class = BookSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['title', 'author']
+    filterset_fields = ['Title']
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         # The following logic mirrors that of the UserViewSet's create method
@@ -93,3 +114,18 @@ class UserBorrowedBooksListView(generics.ListAPIView):
     # Specifies the serializer class for listing borrowed books by user
     serializer_class = UserBorrowedBooksSerializer
     # You might consider adding filter backends here for more dynamic querying
+
+class BookListView(ListAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    
+# View for all borrowed books
+def borrowed_books_list(request):
+    borrowed_books = BorrowedBooks.objects.all()
+    data = {"borrowed_books": list(borrowed_books.values())}  
+    return JsonResponse(data)
+
+def user_list(request):
+    users = User.objects.all()
+    data = {"users": list(users.values())} 
+    return JsonResponse(data)

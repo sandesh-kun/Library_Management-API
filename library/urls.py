@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserViewSet, BookViewSet, BookDetailsViewSet, BorrowedBooksViewSet
+from . import views
+from .views import UserViewSet, BookViewSet, BookDetailsViewSet, BorrowedBooksViewSet,BookListView
 
 # Initialize a default router
 router = DefaultRouter()
@@ -15,4 +16,7 @@ router.register(r'borrowedbooks', BorrowedBooksViewSet)  # Routes for borrowed b
 # URL patterns
 urlpatterns = [
     path('', include(router.urls)),  # Include all routes from the default router
+    path('books/', BookListView.as_view(), name='book-list'),
+    path('borrowed/', views.borrowed_books_list, name='borrowed-list'),
+    path('users/', views.user_list, name='user-list'),
 ]
